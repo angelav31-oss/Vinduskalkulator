@@ -1,0 +1,594 @@
+
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vinduskalkulator</title>
+  <meta name="description" content="Profesjonell vinduskalkulator med kunde- og fagmodus, tilpasset norske tilbud og relevante TEK17-kontroller." />
+  <style>
+    :root{
+      --bg:#0b1020;--panel:#121a2b;--soft:#182238;--text:#eef3fb;--muted:#9eb0c7;--line:#26344f;
+      --accent:#d6b46b;--accent2:#f3dfaa;--ok:#7ad0a4;--danger:#ff8d8d;--warn:#ffd58d;--shadow:0 24px 70px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#080d18 0%,#0d1423 45%,#121a2b 100%);color:var(--text);min-height:100vh}
+    .wrap{max-width:1480px;margin:auto;padding:28px}
+    .hero{display:grid;grid-template-columns:1.4fr .92fr;gap:22px;align-items:stretch;margin-bottom:22px}
+    .hero-card,.card{background:rgba(18,26,43,.92);border:1px solid rgba(214,180,107,.18);border-radius:24px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+    .hero-card{padding:34px}
+    .eyebrow{color:var(--accent2);letter-spacing:.16em;text-transform:uppercase;font-size:12px;font-weight:800}
+    .hero h1{font-size:clamp(34px,4vw,58px);line-height:1.02;margin:12px 0 14px}
+    .hero p{color:var(--muted);font-size:17px;max-width:850px;line-height:1.55}
+    .badge-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .badge{padding:9px 12px;border-radius:999px;background:#10182a;border:1px solid var(--line);color:#cbd7e8;font-size:13px}
+    .summary-top{padding:28px;display:flex;flex-direction:column;justify-content:space-between}
+    .price{font-size:44px;font-weight:850;color:var(--accent2);margin-top:8px}
+    .small{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.8fr);gap:22px}
+    .card{padding:24px}
+    .section{margin-bottom:24px}.section:last-child{margin-bottom:0}
+    .section h2{font-size:18px;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+    .section h2 span{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#1e2a43;color:var(--accent2);font-size:13px}
+    .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .fields.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field.full{grid-column:1/-1}
+    label{font-size:13px;color:#c7d3e4;font-weight:650}
+    input,select,textarea{width:100%;border:1px solid var(--line);background:#0f1728;color:var(--text);border-radius:12px;padding:13px 14px;font-size:14px;outline:none;transition:.2s}
+    input:focus,select:focus,textarea:focus{border-color:rgba(214,180,107,.75);box-shadow:0 0 0 3px rgba(214,180,107,.08)}
+    textarea{min-height:86px;resize:vertical}
+    .checkrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .check{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0f1728}
+    .check input{width:auto;margin-top:2px}
+    .check b{font-size:13px;display:block}
+    .check small{color:var(--muted)}
+    .sticky{position:sticky;top:20px}
+    .quote-box{background:#0d1525;border:1px solid var(--line);border-radius:18px;padding:20px}
+    .quote-line{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed #273750;color:#cfdaea;font-size:14px}
+    .quote-line:last-child{border-bottom:0}
+    .quote-line.total{font-size:19px;font-weight:800;color:white;padding-top:15px}
+    .quote-line.total strong{color:var(--accent2)}
+    button{cursor:pointer;border:0;border-radius:12px;padding:13px 16px;font-weight:800;font-size:14px}
+    .primary{background:linear-gradient(135deg,#cda85d,#eedba7);color:#10131a}
+    .secondary{background:#18243a;color:#e6edf7;border:1px solid var(--line)}
+    .danger{background:#2a1720;color:#ffb4bf;border:1px solid #59303c}
+    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .buttons .wide{grid-column:1/-1}
+    .note{background:#101a2c;border-left:3px solid var(--accent);padding:12px 14px;border-radius:10px;color:#b9c8dc;font-size:12px;line-height:1.55;margin-top:14px}
+    .ok-note{border-left-color:var(--ok)} .warn-note{border-left-color:var(--warn)} .danger-note{border-left-color:var(--danger)}
+    .window-list{display:flex;flex-direction:column;gap:10px}
+    .window-item{padding:12px;border-radius:13px;border:1px solid var(--line);background:#0e1727}
+    .window-item .top{display:flex;justify-content:space-between;gap:12px}
+    .window-item b{font-size:13px}.window-item small{color:var(--muted)}
+    .remove{background:transparent;color:#ff9ea9;padding:0}
+    .footer{margin:25px 0 5px;color:#7387a3;text-align:center;font-size:12px}
+    .mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+    .mode-btn{padding:16px;text-align:left;background:#0f1728;border:1px solid var(--line);border-radius:16px;color:#dbe6f6;transition:.2s}
+    .mode-btn small{display:block;color:var(--muted);font-weight:500;margin-top:4px;line-height:1.45}
+    .mode-btn.active{border-color:rgba(214,180,107,.65);box-shadow:0 0 0 3px rgba(214,180,107,.08);background:linear-gradient(180deg,#141f34,#111a2b)}
+    .mode-pill{display:inline-flex;align-items:center;gap:8px;background:#101a2c;padding:8px 12px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:#dce6f5}
+    .info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .info-card{padding:12px;border:1px solid var(--line);border-radius:14px;background:#0f1728}
+    .info-card b{display:block;font-size:13px;margin-bottom:4px}
+    .hidden{display:none!important}
+    @media(max-width:980px){.hero,.grid{grid-template-columns:1fr}.sticky{position:static}.fields,.fields.three,.info-grid,.mode-switch{grid-template-columns:1fr}.checkrow{grid-template-columns:1fr}}
+    @media print{body{background:white;color:#111}.wrap{max-width:none;padding:0}.form-card,.buttons,.note.print-hide,.footer,.badge-row,.mode-switch{display:none!important}.hero{grid-template-columns:1fr}.hero-card,.card,.summary-top{box-shadow:none;border:1px solid #ddd;background:white;color:#111}.hero p,.small,.quote-line,.window-item small{color:#555}.price,.quote-line.total strong{color:#8a6a2c}.sticky{position:static}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-card">
+      <div class="eyebrow">Tilbudsverktøy for vinduer</div>
+      <h1>Vinduskalkulator</h1>
+      <p>Bruk samme kalkulator i to nivåer: <b>Kunde</b> for enkel registrering og <b>Fagperson</b> for full teknisk og kommersiell kontroll. Norske forhold er bygget inn i valg, varsler og forhåndskontroll.</p>
+      <div class="badge-row">
+        <div class="badge">Kunde + fagmodus</div>
+        <div class="badge">TEK17-forhåndskontroll</div>
+        <div class="badge">NOK + MVA</div>
+        <div class="badge">Klar for GitHub Pages</div>
+      </div>
+      <div class="mode-switch">
+        <button type="button" class="mode-btn active" id="modeKundeBtn" data-mode="kunde"><b>Kunde</b><small>For boligeier eller kunde som vil fylle ut en enkel forespørsel og få et veiledende tilbud.</small></button>
+        <button type="button" class="mode-btn" id="modeProBtn" data-mode="pro"><b>Fagperson</b><small>For selger, montør eller leverandør som vil styre tekniske data, prisparametere, margin og kontrollpunkter.</small></button>
+      </div>
+    </div>
+    <div class="hero-card summary-top">
+      <div>
+        <div class="small" id="heroLabel">Veiledende tilbud inkl. MVA</div>
+        <div class="price" id="heroTotal">0 kr</div>
+      </div>
+      <div class="small" id="heroText">I kundemodus brukes forhåndsdefinerte faglige standardvalg. Bytt til fagperson for detaljstyring av glass, teknikk, marginer og tilbudsparametere.</div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <main class="card form-card">
+      <div class="section">
+        <h2><span>1</span>Brukernivå</h2>
+        <div class="note print-hide"><b>Tips:</b> Kundemodus skjuler fagfeltene og fyller ut standard tekniske valg automatisk. Fagmodus viser alle detaljer og egner seg best når tilbudet ferdigstilles.</div>
+      </div>
+
+      <div class="section">
+        <h2><span>2</span>Kunde og prosjekt</h2>
+        <div class="fields">
+          <div class="field"><label>Kundenavn</label><input id="customer" placeholder="Ola Nordmann"></div>
+          <div class="field"><label>Prosjektnavn / referanse</label><input id="project" placeholder="Bolig – vindusutskifting"></div>
+          <div class="field"><label>Postnummer / sted</label><input id="location" placeholder="0375 Oslo"></div>
+          <div class="field"><label>Tilbudsnummer</label><input id="quoteNo" placeholder="EK-2026-001"></div>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="kunde">
+        <h2><span>3</span>Enkel registrering for kunde</h2>
+        <div class="fields three">
+          <div class="field"><label>Bygningstype</label><select id="k_buildingUse"><option value="dwelling">Bolig</option><option value="dwelling">Hytte / fritidsbolig</option><option value="commercial">Næringsbygg</option></select></div>
+          <div class="field"><label>Romtype</label><select id="k_roomType"><option value="living">Rom for varig opphold</option><option value="livingroom">Stue</option><option value="bedroom">Soverom</option><option value="other">Kjøkken / annet rom</option></select></div>
+          <div class="field"><label>Skal dette være rømningsvindu?</label><select id="k_escapeRequired"><option value="auto">Automatisk vurdering</option><option value="yes">Ja</option><option value="no">Nei</option></select></div>
+          <div class="field"><label>Ønsket vindustype</label><select id="k_type"><option value="1.00">Fastkarm</option><option value="1.12">Toppsving</option><option value="1.10">Sidehengslet</option><option value="1.16">Tilt & turn</option><option value="1.22">2-fløyet</option><option value="1.30">3-fløyet</option><option value="1.28">Balkongdør / terrassedør</option><option value="1.42">Skyvedør / heve-skyvedør</option><option value="1.18">Kjellervindu</option><option value="1.34">Spesialform</option></select></div>
+          <div class="field"><label>Materiale</label><select id="k_material"><option value="1.00">PVC</option><option value="1.25">Tre</option><option value="1.48">Tre/aluminium</option><option value="1.62">Aluminium</option></select></div>
+          <div class="field"><label>Antall</label><input id="k_qty" type="number" min="1" value="1"></div>
+          <div class="field"><label>Bredde (mm)</label><input id="k_width" type="number" min="300" value="1200"></div>
+          <div class="field"><label>Høyde (mm)</label><input id="k_height" type="number" min="300" value="1200"></div>
+          <div class="field"><label>Energimål</label><select id="k_profile"><option value="1.00">Standard</option><option value="1.10" selected>God energieffektivitet</option><option value="1.20">Best mulig / høy ytelse</option></select></div>
+          <div class="field"><label>Glassnivå</label><select id="k_glass"><option value="1.18" selected>3-lags energiglass</option><option value="1.28">3-lags høyytelse</option><option value="1.00">2-lags energiglass</option><option value="1.38">Spesialglass</option></select></div>
+          <div class="field"><label>Innvendig farge</label><select id="k_inside"><option value="0">Hvit standard</option><option value="250">RAL-farge</option><option value="450">Tredekor / spesialfinish</option><option value="650">Spesialfinish</option></select></div>
+          <div class="field"><label>Utvendig farge</label><select id="k_outside"><option value="0">Hvit standard</option><option value="350">RAL-farge</option><option value="550">Antrasitt / svart</option><option value="750">Spesialfinish</option></select></div>
+          <div class="field"><label>Omtrentlig romareal (m²)</label><input id="k_roomArea" type="number" min="0" step="0.1" value="0"></div>
+          <div class="field"><label>Underkant glass over gulv (mm)</label><input id="k_glassFloor" type="number" min="0" value="900"></div>
+          <div class="field"><label>Høyde over terreng utenfor (m)</label><input id="k_heightTerrain" type="number" min="0" step="0.1" value="1.0"></div>
+          <div class="field"><label>Plassering</label><select id="k_glassLocation"><option value="general">Yttervegg generelt</option><option value="terrace">Mot balkong / terrasse / veranda</option><option value="communication">Inngangsparti / kommunikasjonsvei</option></select></div>
+        </div>
+        <div class="checkrow" style="margin-top:14px">
+          <label class="check"><input id="k_sound" type="checkbox"><span><b>Lyddemping ønskes</b><small>For trafikk, støy eller annet lydbehov</small></span></label>
+          <label class="check"><input id="k_solar" type="checkbox"><span><b>Solskjerming ønskes</b><small>Redusert varmeinnslipp og blending</small></span></label>
+          <label class="check"><input id="k_privacy" type="checkbox"><span><b>Privatliv / frostet glass</b><small>Typisk bad, entré eller utsatte soner</small></span></label>
+          <label class="check"><input id="k_easyclean" type="checkbox"><span><b>Selvrensende glass</b><small>Enklere vedlikehold</small></span></label>
+        </div>
+        <div class="fields three" style="margin-top:14px">
+          <div class="field"><label>Montering</label><select id="k_install"><option value="0">Ingen montering</option><option value="2200">Standard montering / stk.</option><option value="3200">Utvidet montering / stk.</option><option value="4200">Montering inkl. demontering / stk.</option></select></div>
+          <div class="field"><label>Innvendig/utvendig finish</label><select id="k_finish"><option value="0">Ikke inkludert</option><option value="950">Enkel finish / stk.</option><option value="1850">Komplett finish / stk.</option></select></div>
+          <div class="field"><label>Demontering og bortkjøring</label><select id="k_removal"><option value="0">Ikke inkludert</option><option value="650">Demontering / stk.</option><option value="950">Demontering + bortkjøring / stk.</option></select></div>
+        </div>
+        <div class="note"><b>Kundemodus:</b> Kalkulatoren legger inn standard fagvalg i bakgrunnen og utfører en forenklet norsk forhåndskontroll. Endelig teknisk godkjenning bør alltid bekreftes i fagmodus eller mot produsentens dokumentasjon.</div>
+      </div>
+
+      <div class="section" data-mode-show="pro">
+        <h2><span>3</span>Vinduskonfigurasjon</h2>
+        <div class="fields three">
+          <div class="field"><label>Vindustype</label><select id="type"><option value="1.00">Fastkarm</option><option value="1.12">Toppsving</option><option value="1.10">Sidehengslet</option><option value="1.16">Tilt & turn</option><option value="1.22">2-fløyet</option><option value="1.30">3-fløyet</option><option value="1.28">Balkongdør / terrassedør</option><option value="1.42">Skyvedør / heve-skyvedør</option><option value="1.18">Kjellervindu</option><option value="1.34">Spesialform</option></select></div>
+          <div class="field"><label>Materiale</label><select id="material"><option value="1.00">PVC</option><option value="1.25">Tre</option><option value="1.48">Tre/aluminium</option><option value="1.62">Aluminium</option></select></div>
+          <div class="field"><label>Antall</label><input id="qty" type="number" min="1" value="1"></div>
+          <div class="field"><label>Bredde (mm)</label><input id="width" type="number" min="300" value="1200"></div>
+          <div class="field"><label>Høyde (mm)</label><input id="height" type="number" min="300" value="1200"></div>
+          <div class="field"><label>Profil / energiklasse</label><select id="profile"><option value="1.00">Standard</option><option value="1.10">Energieffektiv</option><option value="1.20">Passivhus / høy ytelse</option><option value="1.28">Ekstra slank designprofil</option></select></div>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="pro">
+        <h2><span>4</span>Glass og ytelse</h2>
+        <div class="fields">
+          <div class="field"><label>Glasspakke</label><select id="glass"><option value="1.00">2-lags energiglass</option><option value="1.18" selected>3-lags energiglass</option><option value="1.28">3-lags høyytelse lavenergi</option><option value="1.38">4-lags / spesial</option></select></div>
+          <div class="field"><label>Varm kant / spacer</label><select id="spacer"><option value="0">Standard</option><option value="220">Varm kant</option><option value="420">Forbedret varm kant</option></select></div>
+          <div class="field"><label>Sikkerhetsglass</label><select id="safety"><option value="0">Ikke valgt</option><option value="550">Herdet glass</option><option value="850">Laminert sikkerhetsglass</option><option value="1200">Herdet + laminert</option></select></div>
+          <div class="field"><label>Funksjonsglass</label><select id="specialGlass"><option value="0">Standard</option><option value="450">Solkontroll</option><option value="580">Lydreduksjon</option><option value="690">Selvrensende glass</option><option value="980">Solkontroll + lydreduksjon</option><option value="850">Frostet / ornamentglass</option></select></div>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="pro">
+        <h2><span>5</span>Teknisk kontroll – norske krav</h2>
+        <div class="fields three">
+          <div class="field"><label>U-verdi vindu inkl. karm (W/m²K)</label><input id="uValue" type="number" min="0.3" max="5" step="0.01" value="0.80"></div>
+          <div class="field"><label>Fri åpningsbredde (mm)</label><input id="freeWidth" type="number" min="0" value="650"></div>
+          <div class="field"><label>Fri åpningshøyde (mm)</label><input id="freeHeight" type="number" min="0" value="900"></div>
+          <div class="field"><label>Underkant vindusåpning over gulv (mm)</label><input id="sillFloor" type="number" min="0" value="900"></div>
+          <div class="field"><label>Underkant vindu over terreng (m)</label><input id="heightTerrain" type="number" min="0" step="0.1" value="1.0"></div>
+          <div class="field"><label>Underkant glass over gulv (mm)</label><input id="glassFloor" type="number" min="0" value="900"></div>
+          <div class="field"><label>Bruksområde</label><select id="buildingUse"><option value="dwelling">Bolig</option><option value="universal">Bygg med krav om universell utforming</option><option value="school">Skole / barnehage</option><option value="commercial">Annet bygg</option></select></div>
+          <div class="field"><label>Plassering</label><select id="glassLocation"><option value="general">Yttervegg generelt</option><option value="terrace">Mot balkong / terrasse / veranda</option><option value="communication">Inngangsparti / kommunikasjonsvei</option></select></div>
+          <div class="field"><label>Romtype</label><select id="roomType"><option value="other">Ikke spesifisert</option><option value="living">Rom for varig opphold</option><option value="livingroom">Stue</option><option value="bedroom">Soverom</option></select></div>
+          <div class="field"><label>Rømningsvindu?</label><select id="escapeRequired"><option value="no">Nei / ikke vurdert</option><option value="yes">Ja</option></select></div>
+          <div class="field"><label>Romareal (m²)</label><input id="roomArea" type="number" min="0" step="0.1" value="0"></div>
+          <div class="field"><label>Lystransmisjon glass (0–1)</label><input id="lightTransmission" type="number" min="0.1" max="1" step="0.01" value="0.70"></div>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="pro">
+        <h2><span>6</span>Farge, finish og design</h2>
+        <div class="fields">
+          <div class="field"><label>Innvendig farge</label><select id="inside"><option value="0">Hvit standard</option><option value="250">RAL-farge</option><option value="450">Tredekor / spesialfinish</option><option value="650">Spesialfinish</option></select></div>
+          <div class="field"><label>Utvendig farge</label><select id="outside"><option value="0">Hvit standard</option><option value="350">RAL-farge</option><option value="550">Antrasitt / svart</option><option value="750">Spesialfinish</option></select></div>
+          <div class="field"><label>Sprosser</label><select id="bars"><option value="0">Ingen</option><option value="450">Utvendige sprosser</option><option value="620">Mellomliggende sprosser</option><option value="850">Gjennomgående sprosser</option></select></div>
+          <div class="field"><label>Beslag / håndtak</label><select id="hardware"><option value="0">Standard</option><option value="350">Designhåndtak</option><option value="580">Sikkerhetsbeslag</option><option value="820">Skjult beslag</option><option value="1100">Design + sikkerhet</option></select></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span>7</span>Tilvalg</h2>
+        <div class="checkrow">
+          <label class="check"><input class="option-check" id="vent" type="checkbox" data-price="390"><span><b>Spalteventil</b><small>Friskluftsventil / trickle vent</small></span></label>
+          <label class="check"><input class="option-check" id="child" type="checkbox" data-price="260"><span><b>Barnesikring</b><small>Sikkerhetsbegrensning</small></span></label>
+          <label class="check"><input class="option-check" id="insect" type="checkbox" data-price="850"><span><b>Insektnett</b><small>Avtakbart insektnett</small></span></label>
+          <label class="check"><input class="option-check" id="smart" type="checkbox" data-price="1450"><span><b>Smart sensor</b><small>Åpen/lukket sensor</small></span></label>
+          <label class="check"><input class="option-check" id="blind" type="checkbox" data-price="2200"><span><b>Integrert solskjerming</b><small>Pris pr. vindu</small></span></label>
+          <label class="check"><input class="option-check" id="fire" type="checkbox" data-price="1850"><span><b>Rømningsfunksjon / spesialløsning</b><small>Teknisk tilpasning – må dokumenteres</small></span></label>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="pro">
+        <h2><span>8</span>Montering, frakt og kommersielle vilkår</h2>
+        <div class="fields three">
+          <div class="field"><label>Montering</label><select id="install"><option value="0">Ingen montering</option><option value="2200">Standard montering / stk.</option><option value="3200">Utvidet montering / stk.</option><option value="4200">Montering inkl. demontering / stk.</option></select></div>
+          <div class="field"><label>Innvendig/utvendig finish</label><select id="finish"><option value="0">Ikke inkludert</option><option value="950">Enkel finish / stk.</option><option value="1850">Komplett finish / stk.</option></select></div>
+          <div class="field"><label>Demontering og bortkjøring</label><select id="removal"><option value="0">Ikke inkludert</option><option value="650">Demontering / stk.</option><option value="950">Demontering + bortkjøring / stk.</option></select></div>
+          <div class="field"><label>Frakt / levering (NOK)</label><input id="shipping" type="number" min="0" value="2900"></div>
+          <div class="field"><label>Påslag / margin (%)</label><input id="margin" type="number" min="0" step="0.1" value="28"></div>
+          <div class="field"><label>MVA (%)</label><input id="vat" type="number" min="0" step="0.1" value="25"></div>
+          <div class="field"><label>Valgfri rabatt (%)</label><input id="discount" type="number" min="0" max="100" step="0.1" value="0"></div>
+          <div class="field"><label>Grunnpris pr. m² (NOK)</label><input id="baseM2" type="number" min="0" value="5200"></div>
+          <div class="field"><label>Minimumspris pr. enhet (NOK)</label><input id="minUnit" type="number" min="0" value="4200"></div>
+        </div>
+      </div>
+
+      <div class="section" data-mode-show="kunde">
+        <h2><span>8</span>Prisantakelser i kundemodus</h2>
+        <div class="info-grid">
+          <div class="info-card"><b>Prisgrunnlag</b><span class="small">Kalkulatoren bruker standard innstillinger i bakgrunnen som fagperson kan justere.</span></div>
+          <div class="info-card"><b>Frakt</b><span class="small">Standard frakt er inkludert når minst ett vindu legges til.</span></div>
+          <div class="info-card"><b>MVA</b><span class="small">Sluttsum vises inkl. MVA slik kunden ser total pris.</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span>9</span>Legg til vindu i tilbudet</h2>
+        <div class="buttons"><button class="primary wide" id="addBtn">+ Legg til konfigurert vindu</button></div>
+        <div class="window-list" id="windowList" style="margin-top:14px"></div>
+      </div>
+
+      <div class="section">
+        <h2><span>10</span>Notater til kunden</h2>
+        <div class="field full"><textarea id="notes" placeholder="Forbehold, leveringstid, fargekode, tekniske krav, ønsket montasjedato osv."></textarea></div>
+      </div>
+    </main>
+
+    <aside class="card sticky">
+      <div class="section">
+        <h2><span>✓</span>Tilbudssammendrag</h2>
+        <div class="quote-box">
+          <div class="small" id="summaryMode">Modus: Kunde</div>
+          <div class="small" id="summaryCustomer">Kunde: –</div>
+          <div class="small" id="summaryProject">Prosjekt: –</div>
+          <div style="height:12px"></div>
+          <div class="quote-line"><span>Vinduer og tilvalg</span><strong id="productsTotal">0 kr</strong></div>
+          <div class="quote-line"><span>Frakt</span><strong id="shippingTotal">0 kr</strong></div>
+          <div class="quote-line"><span>Påslag / margin</span><strong id="marginTotal">0 kr</strong></div>
+          <div class="quote-line"><span>Rabatt</span><strong id="discountTotal">0 kr</strong></div>
+          <div class="quote-line"><span>Sum eks. MVA</span><strong id="netTotal">0 kr</strong></div>
+          <div class="quote-line"><span>MVA</span><strong id="vatTotal">0 kr</strong></div>
+          <div class="quote-line total"><span>Totalt inkl. MVA</span><strong id="grandTotal">0 kr</strong></div>
+        </div>
+        <div id="complianceBox" class="note" style="margin-top:14px"></div>
+        <div class="note"><b>Om norske begrensninger:</b> Kalkulatoren viser når kombinasjoner eller dimensjoner må kontrolleres nærmere. Det finnes ikke én universell maksimumsstørrelse for alle vinduer; endelig tillatt størrelse avhenger av produsent, profil, beslag, glassvekt og aktuelle laster.</div>
+        <div class="buttons">
+          <button class="primary" onclick="window.print()">Skriv ut / PDF</button>
+          <button class="secondary" id="copyBtn">Kopier tilbud</button>
+          <button class="secondary wide" id="saveBtn">Lagre lokalt</button>
+          <button class="danger wide" id="resetBtn">Nullstill tilbud</button>
+        </div>
+        <div class="note"><b>Viktig:</b> Regelkontrollen er et tilbuds- og forhåndskontrollverktøy. Endelig produktvalg må dokumenteres mot gjeldende TEK17, prosjektets prosjektering og produsentens ytelseserklæring og produktgrenser.</div>
+      </div>
+    </aside>
+  </div>
+  <div class="footer">Vinduskalkulator · kunde- og fagmodus · klar for GitHub Pages</div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let items = [];
+  let mode = 'kunde';
+  const money = n => new Intl.NumberFormat('nb-NO',{style:'currency',currency:'NOK',maximumFractionDigits:0}).format(n || 0);
+  const val = id => Number($(id).value) || 0;
+  const txt = id => { const e=$(id); return e.options ? e.options[e.selectedIndex].text : e.value; };
+
+  function optionExtras(){
+    let sum = 0;
+    document.querySelectorAll('.option-check').forEach(c => { if(c.checked) sum += Number(c.dataset.price) || 0; });
+    return sum;
+  }
+
+  function estimateUValue(){
+    const g = $('glass').value;
+    const p = $('profile').value;
+    if (g === '1.28' && (p === '1.20' || p === '1.28')) return 0.75;
+    if (g === '1.18' && (p === '1.10' || p === '1.20' || p === '1.28')) return 0.80;
+    if (g === '1.18') return 0.90;
+    if (g === '1.00') return 1.10;
+    if (g === '1.38') return 0.70;
+    return 0.90;
+  }
+
+  function estimateFreeOpening(typeText, width, height){
+    const key = typeText.toLowerCase();
+    if (key.includes('fastkarm')) return {w:0,h:0};
+    let fw = width * 0.48, fh = height * 0.72;
+    if (key.includes('toppsving')) { fw = width * 0.50; fh = height * 0.70; }
+    else if (key.includes('sidehengslet')) { fw = width * 0.46; fh = height * 0.78; }
+    else if (key.includes('tilt')) { fw = width * 0.42; fh = height * 0.72; }
+    else if (key.includes('2-fløyet')) { fw = width * 0.44; fh = height * 0.76; }
+    else if (key.includes('3-fløyet')) { fw = width * 0.38; fh = height * 0.76; }
+    else if (key.includes('kjeller')) { fw = width * 0.46; fh = height * 0.66; }
+    return {w:Math.round(fw), h:Math.round(fh)};
+  }
+
+  function setValue(id, value){
+    const el = $(id);
+    if(!el) return;
+    el.value = value;
+  }
+
+  function setChecked(id, value){
+    const el = $(id);
+    if(!el) return;
+    el.checked = !!value;
+  }
+
+  function customerSpecialGlass(){
+    const solar = $('k_solar').checked;
+    const sound = $('k_sound').checked;
+    const privacy = $('k_privacy').checked;
+    const easy = $('k_easyclean').checked;
+    if (solar && sound) return '980';
+    if (privacy) return '850';
+    if (easy) return '690';
+    if (sound) return '580';
+    if (solar) return '450';
+    return '0';
+  }
+
+  function syncCustomerToProfessional(){
+    setValue('type', $('k_type').value);
+    setValue('material', $('k_material').value);
+    setValue('qty', $('k_qty').value);
+    setValue('width', $('k_width').value);
+    setValue('height', $('k_height').value);
+    setValue('profile', $('k_profile').value);
+    setValue('glass', $('k_glass').value);
+    setValue('inside', $('k_inside').value);
+    setValue('outside', $('k_outside').value);
+    setValue('install', $('k_install').value);
+    setValue('finish', $('k_finish').value);
+    setValue('removal', $('k_removal').value);
+    setValue('buildingUse', $('k_buildingUse').value);
+    setValue('roomType', $('k_roomType').value);
+    setValue('roomArea', $('k_roomArea').value);
+    setValue('glassFloor', $('k_glassFloor').value);
+    setValue('heightTerrain', $('k_heightTerrain').value);
+    setValue('glassLocation', $('k_glassLocation').value);
+    setValue('lightTransmission', $('k_privacy').checked ? '0.55' : '0.70');
+    setValue('specialGlass', customerSpecialGlass());
+    const escapeMode = $('k_escapeRequired').value;
+    const room = $('k_roomType').value;
+    const typeText = txt('k_type');
+    const needsEscape = escapeMode === 'yes' || (escapeMode === 'auto' && room === 'bedroom');
+    setValue('escapeRequired', needsEscape ? 'yes' : 'no');
+    const est = estimateFreeOpening(typeText, val('k_width'), val('k_height'));
+    setValue('freeWidth', est.w);
+    setValue('freeHeight', est.h);
+    setValue('sillFloor', $('k_glassFloor').value);
+    setValue('uValue', estimateUValue().toFixed(2));
+
+    const needSafety = val('k_glassFloor') < 800 && (($('k_glassLocation').value !== 'general') || val('k_heightTerrain') >= 6.6 || $('k_buildingUse').value === 'commercial');
+    setValue('safety', needSafety ? '850' : '0');
+
+    if ($('k_sound').checked) setChecked('vent', false);
+  }
+
+  function getCurrentQty(){ return Math.max(1, val('qty')); }
+  function getCurrentArea(){ return (val('width') / 1000) * (val('height') / 1000); }
+
+  function calcConfigured(){
+    if (mode === 'kunde') syncCustomerToProfessional();
+    const area = getCurrentArea();
+    const qty = getCurrentQty();
+    const base = Math.max(val('minUnit'), area * val('baseM2'));
+    const mult = Number($('type').value) * Number($('material').value) * Number($('profile').value) * Number($('glass').value);
+    const perUnit = base * mult + val('spacer') + val('safety') + val('specialGlass') + val('inside') + val('outside') + val('bars') + val('hardware') + optionExtras() + val('install') + val('finish') + val('removal');
+    return { qty, area, perUnit, total: perUnit * qty };
+  }
+
+  function renderItems(){
+    $('windowList').innerHTML = items.length
+      ? items.map((x,i)=>`<div class="window-item"><div class="top"><div><b>${i+1}. ${x.type} · ${x.material}</b><br><small>${x.width} × ${x.height} mm · ${x.qty} stk. · ${x.glass}</small></div><div style="text-align:right"><b>${money(x.total)}</b><br><button class="remove" onclick="removeItem(${i})">Fjern</button></div></div></div>`).join('')
+      : '<div class="small">Ingen vinduer er lagt til ennå.</div>';
+    recalc();
+  }
+
+  function removeItem(i){ items.splice(i,1); renderItems(); }
+
+  function addItem(){
+    const c = calcConfigured();
+    items.push({
+      mode,
+      type: txt('type'),
+      material: txt('material'),
+      glass: txt('glass'),
+      width: val('width'),
+      height: val('height'),
+      qty: c.qty,
+      total: c.total
+    });
+    renderItems();
+  }
+
+  function checkCompliance(){
+    if (mode === 'kunde') syncCustomerToProfessional();
+    const msgs = [];
+    let status = 'ok';
+    const u = val('uValue');
+    const proMode = mode === 'pro';
+
+    if (u <= 0.80) msgs.push('✓ U-verdi ≤ 0,80 W/m²K: god tilpasning til vanlige energikrav i bolig.');
+    else if (u <= 1.20) { msgs.push('⚠ U-verdi over 0,80 men ≤ 1,20 W/m²K: mulig ved dokumentert løsning, men ikke beste nivå.'); status = 'warn'; }
+    else { msgs.push('✕ U-verdi over 1,20 W/m²K: for høyt for ordinære oppvarmede bygg.'); status = 'danger'; }
+
+    const typeText = txt('type');
+    if ($('escapeRequired').value === 'yes') {
+      const fw = val('freeWidth'), fh = val('freeHeight'), sill = val('sillFloor');
+      if (typeText.toLowerCase().includes('fastkarm')) {
+        msgs.push('✕ Fastkarm kan normalt ikke brukes som rømningsvindu. Velg åpningsbart produkt.');
+        status = 'danger';
+      } else if (fw >= 500 && fh >= 600 && (fw + fh) >= 1500 && sill <= 1000) {
+        msgs.push((proMode ? '✓' : '⚠') + ' Rømningskontroll: frie mål ser ' + (proMode ? 'ut til å oppfylle' : 'ut til å kunne oppfylle') + ' minstekravene.');
+        if (!proMode && status === 'ok') status = 'warn';
+      } else {
+        msgs.push((proMode ? '✕' : '⚠') + ' Rømningsvindu må kontrolleres. Krav: fri bredde ≥ 500 mm, fri høyde ≥ 600 mm, sum ≥ 1500 mm og underkant normalt ≤ 1000 mm.');
+        if (proMode) status = 'danger'; else if (status === 'ok') status = 'warn';
+      }
+    }
+
+    const glassLow = val('glassFloor') < 800;
+    const terrain = val('heightTerrain');
+    const use = $('buildingUse').value;
+    const loc = $('glassLocation').value;
+    let safetyNeeded = false;
+    if (glassLow) {
+      if (loc === 'terrace' || loc === 'communication') safetyNeeded = true;
+      if (use === 'universal' || use === 'school') safetyNeeded = true;
+      if (use === 'dwelling' && terrain >= 6.6) safetyNeeded = true;
+      if (use === 'commercial') safetyNeeded = true;
+    }
+    if (safetyNeeded) {
+      if (val('safety') > 0) msgs.push('✓ Sikkerhetsglass er valgt for plassering der sikring bør vurderes.');
+      else { msgs.push('✕ Lavt glassfelt / utsatt plassering tilsier behov for sikkerhetsglass eller annen dokumentert sikring.'); status = 'danger'; }
+    } else msgs.push('✓ Ingen automatisk indikasjon på krav om sikkerhetsglass ut fra oppgitte basisdata.');
+
+    if ((use === 'dwelling' || use === 'school') && terrain >= 3.3) {
+      if ($('child').checked) msgs.push('✓ Barnesikring er valgt ved høy plassering over terreng.');
+      else { msgs.push('⚠ Barnesikring bør vurderes ved høy plassering og risiko for barn.'); if (status === 'ok') status = 'warn'; }
+    }
+
+    const ra = val('roomArea'), lt = val('lightTransmission');
+    if (ra > 0 && lt > 0) {
+      const required = 0.07 * ra / lt;
+      const approxGlassArea = getCurrentArea() * 0.75 * getCurrentQty();
+      if (approxGlassArea >= required) msgs.push(`✓ Forenklet dagslyskontroll: estimert glassareal ${approxGlassArea.toFixed(2)} m² ≥ ca. ${required.toFixed(2)} m².`);
+      else { msgs.push(`⚠ Forenklet dagslyskontroll: estimert glassareal ${approxGlassArea.toFixed(2)} m² < ca. ${required.toFixed(2)} m². Vurder større glassfelt eller egen kontroll.`); if (status === 'ok') status = 'warn'; }
+    }
+
+    const area = getCurrentArea();
+    if (val('width') > 2500 || val('height') > 2500 || area > 4.5) {
+      msgs.push('⚠ Stort format: produsentens maks dimensjoner, glassvekt, beslag og lastdimensjonering må bekreftes før bindende tilbud.');
+      if (status === 'ok') status = 'warn';
+    } else msgs.push('✓ Formatet ligger innen normalt tilbudsområde. Produsentens grenser gjelder alltid.');
+
+    if (mode === 'kunde') msgs.unshift('Kundemodus bruker forenklede estimater og standard fagvalg. Endelig kontroll bør bekreftes av fagperson.');
+
+    $('complianceBox').innerHTML = '<b>Teknisk status:</b><br>' + msgs.join('<br>');
+    $('complianceBox').className = 'note ' + (status === 'ok' ? 'ok-note' : status === 'warn' ? 'warn-note' : 'danger-note');
+  }
+
+  function recalc(){
+    if (mode === 'kunde') syncCustomerToProfessional();
+    const products = items.reduce((a,b) => a + b.total, 0);
+    const shipping = items.length ? val('shipping') : 0;
+    const beforeMargin = products + shipping;
+    const margin = beforeMargin * (val('margin') / 100);
+    const grossBeforeDiscount = beforeMargin + margin;
+    const discount = grossBeforeDiscount * (val('discount') / 100);
+    const net = grossBeforeDiscount - discount;
+    const vat = net * (val('vat') / 100);
+    const grand = net + vat;
+
+    $('productsTotal').textContent = money(products);
+    $('shippingTotal').textContent = money(shipping);
+    $('marginTotal').textContent = money(margin);
+    $('discountTotal').textContent = '− ' + money(discount);
+    $('netTotal').textContent = money(net);
+    $('vatTotal').textContent = money(vat);
+    $('grandTotal').textContent = money(grand);
+    $('heroTotal').textContent = money(grand);
+    $('summaryCustomer').textContent = 'Kunde: ' + ($('customer').value || '–');
+    $('summaryProject').textContent = 'Prosjekt: ' + ($('project').value || '–');
+    $('summaryMode').textContent = 'Modus: ' + (mode === 'kunde' ? 'Kunde' : 'Fagperson');
+    checkCompliance();
+  }
+
+  function copyQuote(){
+    const products = items.map((x,i) => `${i+1}. ${x.type}, ${x.material}, ${x.width}×${x.height} mm, ${x.qty} stk. – ${money(x.total)}`).join('
+');
+    const text = `VINDUSTILBUD
+Modus: ${mode === 'kunde' ? 'Kunde' : 'Fagperson'}
+Kunde: ${$('customer').value || '-'}
+Prosjekt: ${$('project').value || '-'}
+Referanse: ${$('quoteNo').value || '-'}
+
+${products}
+
+Totalt inkl. MVA: ${$('grandTotal').textContent}
+
+Notater: ${$('notes').value || '-'}`;
+    navigator.clipboard.writeText(text);
+    $('copyBtn').textContent = 'Kopiert!';
+    setTimeout(() => $('copyBtn').textContent = 'Kopier tilbud', 1500);
+  }
+
+  function save(){
+    const fields = Object.fromEntries([...document.querySelectorAll('input,select,textarea')].map(e => [e.id, e.type === 'checkbox' ? e.checked : e.value]));
+    localStorage.setItem('windowQuote', JSON.stringify({items, fields, mode}));
+    $('saveBtn').textContent = 'Lagret!';
+    setTimeout(() => $('saveBtn').textContent = 'Lagre lokalt', 1500);
+  }
+
+  function load(){
+    try {
+      const d = JSON.parse(localStorage.getItem('windowQuote'));
+      if (!d) return;
+      items = d.items || [];
+      Object.entries(d.fields || {}).forEach(([id,v]) => {
+        const e = $(id);
+        if (e) {
+          if (e.type === 'checkbox') e.checked = v;
+          else e.value = v;
+        }
+      });
+      mode = d.mode || 'kunde';
+      applyModeUI();
+      renderItems();
+    } catch (e) {}
+  }
+
+  function applyModeUI(){
+    document.querySelectorAll('[data-mode-show]').forEach(el => {
+      el.classList.toggle('hidden', el.dataset.modeShow !== mode);
+    });
+    $('modeKundeBtn').classList.toggle('active', mode === 'kunde');
+    $('modeProBtn').classList.toggle('active', mode === 'pro');
+    $('heroLabel').textContent = mode === 'kunde' ? 'Veiledende tilbud inkl. MVA' : 'Tilbud inkl. MVA';
+    $('heroText').textContent = mode === 'kunde'
+      ? 'Kundemodus bruker standard faglige valg i bakgrunnen. Bytt til fagperson for detaljstyring av glass, teknikk, margin og produktkontroll.'
+      : 'Fagmodus viser alle tekniske og kommersielle parametere slik at du kan ferdigstille et profesjonelt tilbud.';
+    if (mode === 'kunde') syncCustomerToProfessional();
+    recalc();
+  }
+
+  function setMode(nextMode){
+    mode = nextMode;
+    applyModeUI();
+  }
+
+  $('modeKundeBtn').addEventListener('click', () => setMode('kunde'));
+  $('modeProBtn').addEventListener('click', () => setMode('pro'));
+  $('addBtn').addEventListener('click', addItem);
+  $('copyBtn').addEventListener('click', copyQuote);
+  $('saveBtn').addEventListener('click', save);
+  $('resetBtn').addEventListener('click', () => { if(confirm('Vil du nullstille hele tilbudet?')){ localStorage.removeItem('windowQuote'); location.reload(); } });
+
+  document.querySelectorAll('input,select,textarea').forEach(e => e.addEventListener('input', recalc));
+
+  load();
+  applyModeUI();
+  renderItems();
+</script>
+</body>
+</html>
